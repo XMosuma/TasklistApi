@@ -1,7 +1,22 @@
 package com.example.tasklist_api;
 
 public enum TaskStatus {
-    PENDING,
-    IN_PROGRESS,
-    COMPLETED
+    PENDING("Pending"),
+    IN_PROGRESS("In Progress"),
+    COMPLETED("Completed"),
+    CANCELLED("Cancelled");
+
+    private final String displayName;
+    TaskStatus(String displayName) {
+        this.displayName = displayName;
+    }
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    @Override
+    public String toString() {
+        return displayName;
+    }
+
 }
