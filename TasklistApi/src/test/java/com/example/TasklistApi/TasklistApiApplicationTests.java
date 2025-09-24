@@ -1,4 +1,4 @@
-package com.example.tasklist_api;
+package com.example.TasklistApi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

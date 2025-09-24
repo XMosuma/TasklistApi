@@ -1,4 +1,4 @@
-package com.example.tasklist_api;
+package com.example.TasklistApi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
