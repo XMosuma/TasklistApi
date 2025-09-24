@@ -1,49 +1,33 @@
-package main.java.com.example.TasklistApi;
+package com.example.TasklistApi.dto;
 
-import jakarta.persistence.*;
+import com.example.TasklistApi.model.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "tasks")
-public class Task {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class TaskDTO {
     private Long id;
 
     @NotBlank(message = "Title is required")
-    @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+     private String description;
 
-    @NotNull(message = "Due date is required")
-    @Column(nullable = false)
+   @NotNull(message = "Due date is required")
     private LocalDateTime dueDate;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TaskStatus status = TaskStatus.PENDING;
-
-    @Column(nullable = false)
+    
+    private TaskStatus status;
     private LocalDateTime createdAt;
-
-    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     // Constructors
-    public Task() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
+    public TaskDTO() {}
 
-    public Task(String title, String description, LocalDateTime dueDate) {
-        this();
+    public TaskDTO(String title, String description, LocalDateTime dueDate) {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
+        this.status = TaskStatus.PENDING;
     }
 
     // Getters and Setters
@@ -60,19 +44,11 @@ public class Task {
     public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
 
     public TaskStatus getStatus() { return status; }
-    public void setStatus(TaskStatus status) { 
-        this.status = status; 
-        this.updatedAt = LocalDateTime.now();
-    }
+    public void setStatus(TaskStatus status) { this.status = status; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }
