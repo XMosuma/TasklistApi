@@ -4,94 +4,32 @@ Spring Boot Tasklist API
 
 # Spring Boot Tasklist API - Project Structure
 
-```
-tasklist-api/
-│
-├── pom.xml                                    # Maven configuration file
-├── README.md                                  # Project documentation
-├── .gitignore                                # Git ignore file
-├── docker-compose.yml                        # Docker composition for PostgreSQL
-│
+TasklistApi/
+├── pom.xml
 ├── src/
 │   ├── main/
 │   │   ├── java/
 │   │   │   └── com/
 │   │   │       └── example/
 │   │   │           └── tasklistapi/
-│   │   │               │
-│   │   │               ├── TasklistApiApplication.java       # Main Spring Boot Application
-│   │   │               │
-│   │   │               ├── model/                           # Entity Models
-│   │   │               │   ├── Task.java                    # Task entity
-│   │   │               │   └── TaskStatus.java              # Status enum
-│   │   │               │
-│   │   │               ├── repository/                      # Data Access Layer
-│   │   │               │   └── TaskRepository.java          # Task repository interface
-│   │   │               │
-│   │   │               ├── service/                         # Business Logic Layer
-│   │   │               │   └── TaskService.java             # Task service implementation
-│   │   │               │
-│   │   │               ├── controller/                      # REST API Controllers
-│   │   │               │   └── TaskController.java          # Task REST controller
-│   │   │               │
-│   │   │               ├── dto/                            # Data Transfer Objects (Optional)
-│   │   │               │   ├── TaskCreateRequest.java       # Create task request DTO
-│   │   │               │   ├── TaskUpdateRequest.java       # Update task request DTO
-│   │   │               │   └── TaskResponse.java            # Task response DTO
-│   │   │               │
-│   │   │               ├── exception/                       # Custom Exceptions
-│   │   │               │   ├── TaskNotFoundException.java   # Task not found exception
-│   │   │               │   └── GlobalExceptionHandler.java  # Global exception handler
-│   │   │               │
-│   │   │               └── config/                         # Configuration Classes
-│   │   │                   ├── DatabaseConfig.java          # Database configuration
-│   │   │                   └── CorsConfig.java             # CORS configuration
-│   │   │
+│   │   │               ├── TasklistApiApplication.java
+│   │   │               ├── controller/
+│   │   │               │   └── TaskController.java
+│   │   │               ├── dto/
+│   │   │               │   └── TaskDTO.java
+│   │   │               ├── model/
+│   │   │               │   ├── Task.java
+│   │   │               │   └── TaskStatus.java
+│   │   │               ├── repository/
+│   │   │               │   └── TaskRepository.java
+│   │   │               └── service/
+│   │   │                   └── TaskService.java
 │   │   └── resources/
-│   │       ├── application.properties         # Main application configuration
-│   │       ├── application-dev.properties     # Development environment config
-│   │       ├── application-prod.properties    # Production environment config
-│   │       ├── logback-spring.xml            # Logging configuration
-│   │       │
-│   │       ├── static/                       # Static web resources (if any)
-│   │       │   └── index.html                # Simple API documentation page
-│   │       │
-│   │       └── data.sql                      # Initial data (optional)
-│   │
+│   │       ├── application.properties
+│   │       ├── application-dev.properties
+│   │       └── application-prod.properties
 │   └── test/
-│       ├── java/
-│       │   └── com/
-│       │       └── example/
-│       │           └── tasklistapi/
-│       │               │
-│       │               ├── TasklistApiApplicationTests.java # Main application test
-│       │               │
-│       │               ├── controller/                     # Controller tests
-│       │               │   └── TaskControllerTest.java     # Task controller tests
-│       │               │
-│       │               ├── service/                        # Service tests
-│       │               │   └── TaskServiceTest.java        # Task service tests
-│       │               │
-│       │               └── repository/                     # Repository tests
-│       │                   └── TaskRepositoryTest.java     # Task repository tests
-│       │
-│       └── resources/
-│           ├── application-test.properties    # Test environment configuration
-│           └── test-data.sql                 # Test data
-│
-├── postman/                                  # Postman collection for API testing
-│   └── Tasklist_API.postman_collection.json # Postman collection file
-│
-├── docs/                                     # Documentation
-│   ├── api-documentation.md                 # API documentation
-│   └── setup-guide.md                       # Setup and installation guide
-│
-└── scripts/                                 # Utility scripts
-    ├── setup-database.sql                   # Database setup script
-    ├── start-dev.sh                        # Development startup script
-    └── deploy.sh                           # Deployment script
-```
-
+└── README.md
 ## Key Components Explained:
 
 ### 1. **Root Level Files**
