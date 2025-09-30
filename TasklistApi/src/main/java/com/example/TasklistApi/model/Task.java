@@ -33,6 +33,13 @@ public class Task {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // NEW: Track who created and last modified
+    @Column(nullable = false)
+    private String createdBy;
+
+    @Column(nullable = false)
+    private String lastModifiedBy;
+
     // Constructors
     public Task() {
         this.createdAt = LocalDateTime.now();
@@ -70,6 +77,12 @@ public class Task {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+
+    public String getLastModifiedBy() { return lastModifiedBy; }
+    public void setLastModifiedBy(String lastModifiedBy) { this.lastModifiedBy = lastModifiedBy; }
 
     @PreUpdate
     protected void onUpdate() {
