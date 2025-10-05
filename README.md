@@ -26,58 +26,59 @@ TasklistApi/
 │   │   │                   └── TaskService.java
 │   │   └── resources/
 │   │       ├── application.properties
-│   │       ├── application-dev.properties
-│   │       └── application-prod.properties
 │   └── test/
 └── README.md
-## Key Components Explained:
 
-### 1. **Root Level Files**
-- **pom.xml**: Maven dependencies and build configuration
-- **docker-compose.yml**: PostgreSQL database setup
-- **.gitignore**: Git ignore patterns for Java/Spring Boot projects
 
-### 2. **Source Code Structure (src/main/java)**
-- **model/**: Entity classes representing database tables
-- **repository/**: Data access layer using Spring Data JPA
-- **service/**: Business logic and transaction management
-- **controller/**: REST API endpoints and request handling
-- **dto/**: Data transfer objects for API requests/responses
-- **exception/**: Custom exceptions and global error handling
-- **config/**: Configuration classes for various aspects
+🎯 Core Features Implemented:
+✅ Task Management:
 
-### 3. **Resources (src/main/resources)**
-- **application.properties**: Main configuration
-- **Environment-specific configs**: Dev, prod, test configurations
-- **logback-spring.xml**: Logging configuration
-- **static/**: Static web content
-- **data.sql**: Initial database data
+Create tasks with due dates
+List all tasks with optional status filtering
+Mark tasks as completed
+Full CRUD operations (Create, Read, Update, Delete)
 
-### 4. **Test Structure (src/test/java)**
-- **Unit tests**: For services, repositories, controllers
-- **Integration tests**: End-to-end API testing
-- **Test resources**: Test-specific configurations and data
+✅ PostgreSQL Integration:
 
-### 5. **Additional Folders**
-- **postman/**: API testing collections
-- **docs/**: Project documentation
-- **scripts/**: Automation and deployment scripts
+JPA entities with proper relationships
+Repository layer with custom queries
+Database configuration for PostgreSQL
 
-## Package Naming Convention:
-- **com.example.tasklistapi**: Base package
-- Follows standard Spring Boot layered architecture
-- Clear separation of concerns
-- Follows Java naming conventions
+✅ Comprehensive Logging:
 
-## Architecture Pattern:
-This follows the **3-layer architecture**:
-1. **Presentation Layer**: Controllers (REST API)
-2. **Business Layer**: Services (Business Logic)
-3. **Data Layer**: Repositories (Data Access)
+Info, debug, warning, and error logs
+Separate logging levels for development/production
+Request/response logging in controllers
 
-This structure provides:
-- ✅ Clean separation of concerns
-- ✅ Easy testing and maintenance
-- ✅ Scalable architecture
-- ✅ Standard Spring Boot conventions
-- ✅ Professional project organization
+✅ Production Ready:
+
+Input validation with proper error handling
+DTO pattern for clean API contracts
+Service layer architecture
+CORS configuration for frontend integration
+
+📋 API Endpoints:
+
+POST /api/tasks - Create a new task
+GET /api/tasks - Get all tasks (with optional status filter)
+GET /api/tasks/{id} - Get task by ID
+PUT /api/tasks/{id} - Update task
+PATCH /api/tasks/{id}/complete - Mark task as completed
+DELETE /api/tasks/{id} - Delete task
+
+
+## Create Task:
+{
+  "title": "Complete Spring Boot project",
+  "description": "Build a tasklist API with all features",
+  "dueDate": "2024-01-15T10:30:00"
+}
+
+## Update Task:
+
+{
+  "title": "Updated task title",
+  "description": "Updated description",
+  "dueDate": "2024-01-20T15:00:00",
+  "status": "IN_PROGRESS"
+}
