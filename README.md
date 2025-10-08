@@ -71,11 +71,8 @@ cd TasklistApi
 
 2. **Start PostgreSQL**
 ```bash
-docker run --name postgres-tasklist \
-  -e POSTGRES_PASSWORD=mypassword \
-  -e POSTGRES_DB=tasklist_db \
-  -p 5432:5432 \
-  -d postgres:15
+docker run --name postgres-tasklist -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=tasklist_db -p 5432:5432 -d postgres:15
+
 ```
 
 3. **Build and run the application**
@@ -87,14 +84,8 @@ mvn clean package -DskipTests
 docker build -t tasklist-api:latest .
 
 # Run container
-docker run -d \
-  --name tasklist-api \
-  --link postgres-tasklist:postgres \
-  -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-tasklist:5432/tasklist_db \
-  -e SPRING_DATASOURCE_USERNAME=postgres \
-  -e SPRING_DATASOURCE_PASSWORD=mypassword \
-  -p 8081:8081 \
-  tasklist-api:latest
+docker run -d --name tasklist-api --link postgres-tasklist:postgres -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-tasklist:5432/tasklist_db -e SPRING_DATASOURCE_USERNAME=postgres -e SPRING_DATASOURCE_PASSWORD=mypassword -p 8081:8081 tasklist-api:latest
+
 ```
 
 4. **Access the application**
@@ -200,10 +191,13 @@ mvn spring-boot:run
 curl -X POST http://localhost:8081/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "john",
-    "email": "john@example.com",
-    "password": "password123"
+    "username": "xolani",
+    "email": "xolani@example.com",
+    "password": "xolani@11"
   }'
+```
+``` CMD 
+curl -X POST http://localhost:8081/api/auth/register -H "Content-Type: application/json" -d "{\"username\":\"xolani\",\"email\":\"xolani@example.com\",\"password\":\"xolani@11\"}"
 ```
 
 ### 2. Login
