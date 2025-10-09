@@ -5,9 +5,9 @@ services:
     env_file:
       - .env.wsl
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${WSL_POSTGRES_DB}
+      POSTGRES_USER: ${WSL_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${WSL_POSTGRES_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -21,14 +21,14 @@ services:
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      SERVER_PORT: ${SERVER_PORT}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${WSL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${WSL_POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${WSL_POSTGRES_PASSWORD}
+      JWT_SECRET: ${WSL_JWT_SECRET}
+      SERVER_PORT: ${WSL_SERVER_PORT}
       SPRING_PROFILES_ACTIVE: wsl
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "${WSL_SERVER_PORT}:${WSL_SERVER_PORT}"
 
 volumes:
   postgres_data_wsl:
