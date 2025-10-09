@@ -3,23 +3,23 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
-    container_name: postgres-tasklist
+    container_name: postgres-tasklist-wsl
     env_file:
-      - .env
+      - .env.wsl
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_wsl:/var/lib/postgresql/data
 
   api:
     build: .
-    container_name: tasklist-api
+    container_name: tasklist-api-wsl
     env_file:
-      - .env
+      - .env.wsl
     depends_on:
       - postgres
     environment:
@@ -28,8 +28,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       SERVER_PORT: ${SERVER_PORT}
+      SPRING_PROFILES_ACTIVE: wsl
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
 
 volumes:
-  postgres_data:
+  postgres_data_wsl:
