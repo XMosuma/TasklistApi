@@ -498,4 +498,5 @@ java -jar -Dspring.profiles.active=wsl target/TasklistApi-0.0.1-SNAPSHOT.jar
 # Access WSL2 Application
 
 `API: http://localhost:8082/api/tasks`
-`Swagger: http://localhost:8082/swagger-ui.html`
+`Swagger: http://localhost:8082/swagger-ui.html`#   T e s t   C I / C D  
+ 
