@@ -1,3 +1,5 @@
+# Overwrite .gitignore with correct content
+@"
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
@@ -31,3 +33,22 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment Variables ###
+.env
+.env.*
+!.env.example
+.env.local
+.env.production
+.env.development
+
+### OS ###
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+### Logs ###
+*.log
+logs/
+"@ | Set-Content .gitignore
