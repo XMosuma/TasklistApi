@@ -95,37 +95,6 @@ docker run -d --name tasklist-api --link postgres-tasklist:postgres -e SPRING_DA
 ### Option 2: Run with Docker Compose
 
 1. **Create docker-compose.yml**
-```yaml
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:15
-    container_name: postgres-tasklist
-    environment:
-      POSTGRES_DB: tasklist_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mypassword
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  api:
-    build: .
-    container_name: tasklist-api
-    depends_on:
-      - postgres
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tasklist_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: mypassword
-    ports:
-      - "8081:8081"
-
-volumes:
-  postgres_data:
-```
 
 2. **Run**
 ```bash
@@ -271,34 +240,7 @@ curl -X GET http://localhost:8081/api/audit/task/1 \
 
 ## Configuration
 
-### Database Configuration
-
-Edit `src/main/resources/application.properties`:
-
-```properties
-# Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/tasklist_db
-spring.datasource.username=postgres
-spring.datasource.password=mypassword
-
-# Server
-server.port=8081
-
-# JWT
-jwt.secret=your_secret_key_here
-jwt.expiration=86400000
-```
-
 ### Environment Variables
-
-For Docker deployment, use environment variables:
-
-```bash
-SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tasklist_db
-SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=mypassword
-JWT_SECRET=your_production_secret
-```
 
 ## Testing
 
@@ -429,3 +371,131 @@ This project is licensed under the MIT License.
 - PostgreSQL Documentation
 - Docker Documentation
 - JWT.io
+
+
+# Remove from Git tracking
+git rm --cached .env
+git rm --cached .env.wsl
+
+# RUN THE PROJECT
+# Windows
+# Navigate to project
+cd C:\Users\Wipro\Desktop\X\JAVA\TasklistApi\TasklistApi
+
+# Create .env file if not exists
+# (Add your environment variables)
+
+# Start PostgreSQL
+docker run --name postgres-tasklist `
+  --env-file .env `
+  -p 5432:5432 `
+  -d postgres:15
+  # Navigate to project
+# Run Application (Every Time)
+# Option 1: Using Maven
+
+# Load environment variables
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^([^#].+?)=(.+)$') {
+        [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
+    }
+}
+
+# Run application
+mvn spring-boot:run
+
+# Option 2: Using Docker Compose
+# Start everything
+docker-compose up -d
+docker start postgres-tasklist
+
+
+# View logs
+docker-compose logs -f
+
+# Stop everything
+docker-compose down
+
+# Option 3: Using JAR
+# Build JAR
+mvn clean package -DskipTests
+
+# Load environment variables
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^([^#].+?)=(.+)$') {
+        [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
+    }
+}
+
+# Run JAR
+java -jar target/TasklistApi-0.0.1-SNAPSHOT.jar
+
+# Access Windows Application
+
+` API: http://localhost:8081/api/tasks`
+`Swagger: http://localhost:8081/swagger-ui.html`
+
+
+# 🐧 WSL2 Setup & Run Commands
+# Initial Setup (One Time)
+# Open WSL2
+wsl
+
+# Navigate to project
+cd /mnt/c/Users/Wipro/Desktop/X/JAVA/TasklistApi/TasklistApi
+
+# Create .env.wsl file if not exists
+# (Add your environment variables)
+
+# Start PostgreSQL on different port
+docker run --name postgres-tasklist-wsl \
+  --env-file .env.wsl \
+  -p 5433:5432 \
+  -d postgres:15
+
+ # Run Application (Every Time)
+`Option 1: Using Maven`
+# Navigate to project
+`cd /mnt/c/Users/Wipro/Desktop/X/JAVA/TasklistApi/TasklistApi`
+
+# Load environment variables
+set -a
+source .env.wsl
+set +a
+
+# Run application with WSL profile
+`mvn spring-boot:run -Dspring-boot.run.profiles=wsl`
+
+# Option 2: Using Script (Recommended)
+# Navigate to project
+cd /mnt/c/Users/Wipro/Desktop/X/JAVA/TasklistApi/TasklistApi
+
+# Run the script
+./run-wsl.sh
+
+# Option 3: Using Docker Compose
+
+# Start everything
+docker-compose -f docker-compose-wsl.yml up -d
+
+# View logs
+docker-compose -f docker-compose-wsl.yml logs -f
+
+# Stop everything
+docker-compose -f docker-compose-wsl.yml down
+
+# Option 4: Using JAR
+
+# Build JAR
+mvn clean package -DskipTests
+
+# Load environment variables
+set -a && source .env.wsl && set +a
+
+# Run JAR with WSL profile
+java -jar -Dspring.profiles.active=wsl target/TasklistApi-0.0.1-SNAPSHOT.jar
+
+# Access WSL2 Application
+
+`API: http://localhost:8082/api/tasks`
+`Swagger: http://localhost:8082/swagger-ui.html`
