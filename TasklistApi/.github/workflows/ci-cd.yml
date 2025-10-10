@@ -1,10 +1,12 @@
+
 name: TaskList API CI/CD
 
 on:
   push:
-    branches: [ main, Dev ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -21,7 +23,7 @@ jobs:
         env:
           POSTGRES_DB: tasklist_db
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: mypassword
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -46,14 +48,9 @@ jobs:
       env:
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/tasklist_db
         SPRING_DATASOURCE_USERNAME: postgres
-        SPRING_DATASOURCE_PASSWORD: mypassword
-    
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results
-        path: target/surefire-reports/
+        SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        JWT_EXPIRATION: 86400000
 
   build:
     name: Build Application
@@ -73,6 +70,11 @@ jobs:
     
     - name: Build with Maven
       run: mvn clean package -DskipTests
+      env:
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/tasklist_db
+        SPRING_DATASOURCE_USERNAME: postgres
+        SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
     
     - name: Upload JAR artifact
       uses: actions/upload-artifact@v3
@@ -115,11 +117,15 @@ jobs:
           type=ref,event=branch
           type=ref,event=pr
           type=sha
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
     
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
         context: .
-        push: trueb
+        push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
