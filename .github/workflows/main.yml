@@ -140,6 +140,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set lowercase repository name
+       id: repo
+       run: |
+        echo "repo_lower=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+
       - name: Pull latest Docker image
         run: |
           echo "Pulling latest image..."
