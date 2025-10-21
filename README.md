@@ -38,25 +38,39 @@ A comprehensive RESTful API for task management built with Spring Boot, featurin
 TasklistApi/
 ├── src/
 │   ├── main/
-│   │   ├── java/
-│   │   │   └── com/example/TasklistApi/
-│   │   │       ├── config/          # Configuration classes
-│   │   │       ├── controller/      # REST controllers
-│   │   │       ├── dto/            # Data Transfer Objects
-│   │   │       ├── model/          # Entity classes
-│   │   │       ├── repository/     # JPA repositories
-│   │   │       ├── security/       # JWT security components
-│   │   │       └── service/        # Business logic
+│   │   ├── java/com/example/TasklistApi/
+│   │   │   ├── config/           # Configuration classes
+│   │   │   │   ├── OpenApiConfig.java
+│   │   │   │   └── SecurityConfig.java
+│   │   │   ├── controller/       # REST controllers
+│   │   │   │   ├── TaskController.java
+│   │   │   │   └── AuditController.java
+│   │   │   ├── dto/              # Data Transfer Objects
+│   │   │   │   └── TaskDTO.java
+│   │   │   ├── model/            # Entity classes
+│   │   │   │   ├── Task.java
+│   │   │   │   ├── TaskStatus.java
+│   │   │   │   ├── AuditLog.java
+│   │   │   │   └── User.java
+│   │   │   ├── repository/       # JPA repositories
+│   │   │   │   ├── TaskRepository.java
+│   │   │   │   └── AuditLogRepository.java
+│   │   │   ├── service/          # Business logic
+│   │   │   │   ├── TaskService.java
+│   │   │   │   └── AuditService.java
+│   │   │   └── TasklistApiApplication.java
 │   │   └── resources/
-│   │       └── application.properties
-│   └── test/                       # Unit tests
+│   │       ├── application.properties
+│   │       └── application-wsl.properties
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml              # GitHub Actions workflow
-├── Dockerfile
+│       └── ci-cd.yml
 ├── docker-compose.yml
-├── pom.xml
-└── README.md
+├── docker-compose-wsl.yml
+├── Dockerfile
+├── .env
+├── .env.wsl
+└── pom.xml
 ```
 
 ## Getting Started
