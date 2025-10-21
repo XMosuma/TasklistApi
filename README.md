@@ -380,7 +380,7 @@ git rm --cached .env.wsl
 # RUN THE PROJECT
 # Windows
 # Navigate to project
-cd C:\Users\Wipro\Desktop\X\JAVA\TasklistApi\TasklistApi
+cd C:\Users\Wipro\Desktop\X\JAVA\TasklistApi
 
 # Create .env file if not exists
 # (Add your environment variables)
@@ -442,7 +442,7 @@ java -jar target/TasklistApi-0.0.1-SNAPSHOT.jar
 wsl
 
 # Navigate to project
-cd /mnt/c/Users/Wipro/Desktop/X/JAVA/TasklistApi/TasklistApi
+cd /mnt/c/Users/Wipro/Desktop/X/JAVA/TasklistApi
 
 # Create .env.wsl file if not exists
 # (Add your environment variables)
@@ -498,5 +498,4 @@ java -jar -Dspring.profiles.active=wsl target/TasklistApi-0.0.1-SNAPSHOT.jar
 # Access WSL2 Application
 
 `API: http://localhost:8082/api/tasks`
-`Swagger: http://localhost:8082/swagger-ui.html`#   T e s t   C I / C D  
- 
+`Swagger: http://localhost:8082/swagger-ui.html`
