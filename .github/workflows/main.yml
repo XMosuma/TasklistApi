@@ -3,7 +3,7 @@ name: TaskList API CI/CD
 
 on:
   push:
-    branches: [ main, Dev ]
+    branches: [ main, Dev]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -129,3 +129,42 @@ jobs:
         build-args: |
           SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+  deploy:
+    name: Deploy to Local WSL2 VM
+    needs: docker-build-push
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set lowercase repository name
+      id: repo
+      run: |
+        REPO_NAME="${{ github.repository }}"
+        echo "repo_lower=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+    - name: Debug repo name
+      run: |
+        echo "Repository (lowercase): $repo_lower"
+
+    - name: Pull latest Docker image
+      run: |
+        echo "Pulling latest image..."
+        docker pull ghcr.io/$repo_lower:latest
+
+    - name: Restart TaskList API container
+      run: |
+        echo "Restarting container..."
+        docker stop tasklist-api || true
+        docker rm tasklist-api || true
+        docker run -d \
+          --name tasklist-api \
+          -p 8081:8081 \
+          -e SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
+          -e SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
+          -e SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          ghcr.io/$repo_lower:latest
