@@ -1,0 +1,35 @@
+# External service pointing to Docker Postgres on host
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+  namespace: tasklist
+spec:
+  type: ExternalName
+  externalName: host.docker.internal  # For Docker Desktop
+  ports:
+  - port: 5432
+    targetPort: 5432
+
+# # Alternative: If using Minikube or need to use host IP
+# # Find your WSL2 IP with: ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: postgres-db-endpoint
+#   namespace: tasklist
+# spec:
+#   ports:
+#   - port: 5432
+#     targetPort: 5432
+# ---
+# apiVersion: v1
+# kind: Endpoints
+# metadata:
+#   name: postgres-db-endpoint
+#   namespace: tasklist
+# subsets:
+# - addresses:
+#   - ip: 172.17.0.1  # Replace with your actual WSL2 IP or Docker bridge IP
+#   ports:
+#   - port: 5432

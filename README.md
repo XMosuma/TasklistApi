@@ -513,3 +513,10 @@ java -jar -Dspring.profiles.active=wsl target/TasklistApi-0.0.1-SNAPSHOT.jar
 
 `API: http://localhost:8082/api/tasks`
 `Swagger: http://localhost:8082/swagger-ui.html`
+
+
+
+
+# k8s
+Run once to create the namespace:
+`kubectl apply -f k8s/namespace.yaml`
