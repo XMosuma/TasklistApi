@@ -1,18 +1,23 @@
-
 services:
   postgres:
     image: postgres:15
-    container_name: postgres-tasklist
-    env_file:
-      - .env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    container_name: tasklist-postgres
+    restart: always
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_DB: tasklist_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypassword
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tasklist-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build: .
@@ -20,15 +25,23 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tasklist_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: mypassword
       JWT_SECRET: ${JWT_SECRET}
-      SERVER_PORT: ${SERVER_PORT}
+      SERVER_PORT: ${SERVER_PORT:-8081}
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "${SERVER_PORT:-8081}:${SERVER_PORT:-8081}"
+    networks:
+      - tasklist-network
 
 volumes:
   postgres_data:
+    driver: local
+
+networks:
+  tasklist-network:
+    driver: bridge

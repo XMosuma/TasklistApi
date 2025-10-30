@@ -1,4 +1,3 @@
-
 name: TaskList API CI/CD
 
 on:
@@ -90,35 +89,46 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
+    - name: Convert repository name to lowercase
+      id: lower
+      run: |
+        REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+        echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
+        echo "✅ Lowercase repo name: $REPO_LOWER"
+
     - name: Download JAR artifact
       uses: actions/download-artifact@v4
       with:
         name: tasklist-api-jar
         path: target/
-    
-    - name: Log in to Container Registry
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
-        registry: ${{ env.REGISTRY }}
+        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: ghcr.io/${{ env.REPO_LOWER }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
-          type=sha
+          type=sha,prefix=sha-
           type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-    
+          type=raw,value=dev-latest,enable=${{ github.ref == 'refs/heads/Dev' }}
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
@@ -126,11 +136,11 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        build-args: |
-          SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
+        cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}:buildcache
+        cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}:buildcache,mode=max
 
-  deploy:
+
+  deploy-wsl2:
     name: Deploy to Local WSL2 VM
     needs: docker-build-push
     runs-on: self-hosted
@@ -146,25 +156,98 @@ jobs:
         REPO_NAME="${{ github.repository }}"
         echo "repo_lower=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-    - name: Debug repo name
+    - name: Get Docker bridge IP
+      id: docker_ip
       run: |
-        echo "Repository (lowercase): $repo_lower"
+        # Get the IP address of the Docker host as seen from containers
+        DOCKER_HOST_IP=$(ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+        echo "docker_host_ip=$DOCKER_HOST_IP" >> $GITHUB_ENV
+        echo "Docker host IP: $DOCKER_HOST_IP"
+
+    - name: Ensure Postgres is running
+      run: |
+        if ! docker ps | grep -q tasklist-postgres; then
+          echo "Starting Postgres container..."
+          cd ${{ github.workspace }}
+          docker-compose up -d postgres
+          # Wait for Postgres to be ready
+          sleep 10
+        else
+          echo "Postgres container is already running"
+        fi
 
     - name: Pull latest Docker image
       run: |
         echo "Pulling latest image..."
-        docker pull ghcr.io/$repo_lower:latest
+        docker pull ghcr.io/${{ env.repo_lower }}:latest
 
     - name: Restart TaskList API container
       run: |
         echo "Restarting container..."
         docker stop tasklist-api || true
         docker rm tasklist-api || true
+        
+        # Connect to the shared Postgres via Docker bridge network
         docker run -d \
           --name tasklist-api \
-          -p 8081:8081 \
-          -e SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
+          -p 8083:8081 \
+          -e SPRING_DATASOURCE_URL="jdbc:postgresql://${{ env.docker_host_ip }}:5432/tasklist_db" \
           -e SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
           -e SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
           -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-          ghcr.io/$repo_lower:latest
+          --add-host=host.docker.internal:host-gateway \
+          ghcr.io/${{ env.repo_lower }}:latest
+        
+        # Alternative: Use Docker network if both containers are on same network
+        # docker network connect tasklist-network tasklist-api || true
+
+    - name: Verify deployment
+      run: |
+        echo "Waiting for application to start..."
+        sleep 15
+        
+        # Check if container is running
+        if docker ps | grep -q tasklist-api; then
+          echo "✅ Container is running"
+          
+          # Check application health
+          if curl -f http://localhost:8083/actuator/health > /dev/null 2>&1; then
+            echo "✅ Application health check passed"
+          else
+            echo "⚠️  Application health check failed"
+            docker logs tasklist-api --tail 50
+          fi
+        else
+          echo "❌ Container failed to start"
+          docker logs tasklist-api --tail 50
+          exit 1
+        fi
+
+  update-k8s-manifests:
+    name: Update Kubernetes Manifests for ArgoCD
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set lowercase repository name
+      run: |
+        REPO_NAME="${{ github.repository }}"
+        echo "REPO_LOWER=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+    
+    - name: Update image tag in Kubernetes manifests
+      run: |
+        # Update the image tag in the deployment manifest
+        sed -i "s|image: ghcr.io/.*:.*|image: ghcr.io/$REPO_LOWER:${{ github.sha }}|g" k8s/deployment.yaml
+    
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add k8s/deployment.yaml
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update image to ${{ github.sha }}" && git push)

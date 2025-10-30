@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasklist-api
+  namespace: tasklist
+  labels:
+    app: tasklist-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tasklist-api
+  template:
+    metadata:
+      labels:
+        app: tasklist-api
+    spec:
+      containers:
+      - name: tasklist-api
+        image: ghcr.io/xolani-mosuma/tasklistapi:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: datasource-url
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: datasource-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: datasource-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: jwt-secret
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 30
+      imagePullSecrets:
+      - name: ghcr-secret
