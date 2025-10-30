@@ -146,6 +146,12 @@ jobs:
     runs-on: self-hosted
     if: github.ref == 'refs/heads/main'
 
+    # ✅ Inject GitHub Secrets as Environment Variables
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -159,7 +165,6 @@ jobs:
     - name: Get Docker bridge IP
       id: docker_ip
       run: |
-        # Get the IP address of the Docker host as seen from containers
         DOCKER_HOST_IP=$(ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
         echo "docker_host_ip=$DOCKER_HOST_IP" >> $GITHUB_ENV
         echo "Docker host IP: $DOCKER_HOST_IP"
@@ -170,7 +175,6 @@ jobs:
           echo "Starting Postgres container..."
           cd ${{ github.workspace }}
           docker-compose up -d postgres
-          # Wait for Postgres to be ready
           sleep 10
         else
           echo "Postgres container is already running"
@@ -187,30 +191,23 @@ jobs:
         docker stop tasklist-api || true
         docker rm tasklist-api || true
         
-        # Connect to the shared Postgres via Docker bridge network
         docker run -d \
           --name tasklist-api \
           -p 8083:8081 \
           -e SPRING_DATASOURCE_URL="jdbc:postgresql://${{ env.docker_host_ip }}:5432/tasklist_db" \
-          -e SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
-          -e SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-          -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          -e SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME}" \
+          -e SPRING_DATASOURCE_PASSWORD="${POSTGRES_PASSWORD}" \
+          -e JWT_SECRET="${JWT_SECRET}" \
           --add-host=host.docker.internal:host-gateway \
           ghcr.io/${{ env.repo_lower }}:latest
-        
-        # Alternative: Use Docker network if both containers are on same network
-        # docker network connect tasklist-network tasklist-api || true
 
     - name: Verify deployment
       run: |
         echo "Waiting for application to start..."
         sleep 15
         
-        # Check if container is running
         if docker ps | grep -q tasklist-api; then
           echo "✅ Container is running"
-          
-          # Check application health
           if curl -f http://localhost:8083/actuator/health > /dev/null 2>&1; then
             echo "✅ Application health check passed"
           else
@@ -222,6 +219,7 @@ jobs:
           docker logs tasklist-api --tail 50
           exit 1
         fi
+
 
   update-k8s-manifests:
     name: Update Kubernetes Manifests for ArgoCD
