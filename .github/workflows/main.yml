@@ -174,8 +174,10 @@ jobs:
         if ! docker ps | grep -q tasklist-postgres; then
           echo "Starting Postgres container..."
           cd ${{ github.workspace }}
-          docker-compose up -d postgres
-          sleep 10
+          echo "Current directory: $(pwd)"
+          ls -la
+          docker-compose --env-file .env up -d postgres
+              sleep 10
         else
           echo "Postgres container is already running"
         fi
