@@ -174,15 +174,20 @@ jobs:
         if ! docker ps | grep -q tasklist-postgres; then
           echo "Starting Postgres container..."
           
-          # Create .env file with secrets
-          echo "POSTGRES_DB=tasklist_db" > .env
-          echo "POSTGRES_USER=${{ secrets.SPRING_DATASOURCE_USERNAME }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          # Remove old container if exists
+          docker rm -f tasklist-postgres 2>/dev/null || true
           
-          cd ${{ github.workspace }}
-          echo "Current directory: $(pwd)"
-          ls -la
-          docker-compose up -d postgres
+          # Start new postgres container
+          docker run -d \
+            --name tasklist-postgres \
+            -p 5432:5432 \
+            -e POSTGRES_DB=tasklist_db \
+            -e POSTGRES_USER=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
+            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            -v postgres-data:/var/lib/postgresql/data \
+            postgres:15
+          
+          echo "Waiting for Postgres to be ready..."
           sleep 10
         else
           echo "Postgres container is already running"
