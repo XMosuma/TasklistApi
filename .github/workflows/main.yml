@@ -171,12 +171,12 @@ jobs:
 
     - name: Setup Docker environment
       run: |
-        export PATH="/mnt/c/Program Files/Docker/Docker/resources/bin:$PATH"
+        export PATH="/Docker/host/bin:$PATH"
         docker --version
 
     - name: Ensure Postgres is running
       run: |
-        export PATH="/mnt/c/Program Files/Docker/Docker/resources/bin:$PATH"
+        export PATH="/Docker/host/bin:$PATH"
         if ! docker ps | grep -q tasklist-postgres; then
           echo "Starting Postgres container..."
           
