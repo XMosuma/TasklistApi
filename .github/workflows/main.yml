@@ -206,7 +206,7 @@ jobs:
         
         docker run -d \
           --name tasklist-api \
-          -p 8083:8081 \
+          -p 8084:8081 \
           -e SPRING_DATASOURCE_URL="jdbc:postgresql://${{ env.docker_host_ip }}:5432/tasklist_db" \
           -e SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME}" \
           -e SPRING_DATASOURCE_PASSWORD="${POSTGRES_PASSWORD}" \
@@ -221,7 +221,7 @@ jobs:
         
         if docker ps | grep -q tasklist-api; then
           echo "✅ Container is running"
-          if curl -f http://localhost:8083/actuator/health > /dev/null 2>&1; then
+          if curl -f http://localhost:8084/actuator/health > /dev/null 2>&1; then
             echo "✅ Application health check passed"
           else
             echo "⚠️  Application health check failed"

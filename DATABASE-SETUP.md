@@ -6,7 +6,7 @@ This guide explains how to set up a shared PostgreSQL database that all three en
 
 ```
 Windows App (localhost:8081) ─┐
-WSL2 Docker (localhost:8083) ─┼─→ Docker Postgres (localhost:5432)
+WSL2 Docker (localhost:8084) ─┼─→ Docker Postgres (localhost:5432)
 Kubernetes Cluster ───────────┘
 ```
 
@@ -73,7 +73,7 @@ psql -h localhost -p 5432 -U postgres -d tasklist_db
 
 ---
 
-### 🐧 WSL2 Docker Container (Port 8083)
+### 🐧 WSL2 Docker Container (Port 8084)
 
 The GitHub Actions workflow handles this automatically, but for manual deployment:
 
@@ -87,7 +87,7 @@ ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
 ```bash
 docker run -d \
   --name tasklist-api \
-  -p 8083:8081 \
+  -p 8084:8081 \
   -e SPRING_DATASOURCE_URL="jdbc:postgresql://172.17.0.1:5432/tasklist_db" \
   -e SPRING_DATASOURCE_USERNAME=postgres \
   -e SPRING_DATASOURCE_PASSWORD=mypassword \
@@ -167,7 +167,7 @@ curl http://localhost:8081/actuator/health
 ### 3. Check WSL2 Docker
 
 ```bash
-curl http://localhost:8083/actuator/health
+curl http://localhost:8084/actuator/health
 ```
 
 ### 4. Check Kubernetes
@@ -262,7 +262,7 @@ Ensure these secrets are set in your GitHub repository:
 │  ┌──────────────┐                 │                     │
 │  │  WSL2 Docker │                 │                     │
 │  │  Container   │─────────────────┘                     │
-│  │  Port: 8083  │                                       │
+│  │  Port: 8084  │                                       │
 │  └──────────────┘                                       │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
