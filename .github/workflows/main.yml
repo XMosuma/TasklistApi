@@ -175,11 +175,9 @@ jobs:
           echo "Starting Postgres container..."
           
           # Create .env file with secrets
-          cat << EOF > .env
-          POSTGRES_DB=tasklist_db
-          POSTGRES_USER=${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          EOF
+          echo "POSTGRES_DB=tasklist_db" > .env
+          echo "POSTGRES_USER=${{ secrets.SPRING_DATASOURCE_USERNAME }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
           
           cd ${{ github.workspace }}
           echo "Current directory: $(pwd)"
