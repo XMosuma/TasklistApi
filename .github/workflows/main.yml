@@ -169,8 +169,14 @@ jobs:
         echo "docker_host_ip=$DOCKER_HOST_IP" >> $GITHUB_ENV
         echo "Docker host IP: $DOCKER_HOST_IP"
 
+    - name: Setup Docker environment
+      run: |
+        export PATH="/mnt/c/Program Files/Docker/Docker/resources/bin:$PATH"
+        docker --version
+
     - name: Ensure Postgres is running
       run: |
+        export PATH="/mnt/c/Program Files/Docker/Docker/resources/bin:$PATH"
         if ! docker ps | grep -q tasklist-postgres; then
           echo "Starting Postgres container..."
           
