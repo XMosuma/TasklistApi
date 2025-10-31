@@ -169,21 +169,16 @@ jobs:
         echo "docker_host_ip=$DOCKER_HOST_IP" >> $GITHUB_ENV
         echo "Docker host IP: $DOCKER_HOST_IP"
 
-    - name: Setup Docker environment
+    - name: Start Docker service
       run: |
-        export PATH="/Docker/host/bin:$PATH"
+        sudo service docker start 2>/dev/null || true
         docker --version
 
     - name: Ensure Postgres is running
       run: |
-        export PATH="/Docker/host/bin:$PATH"
         if ! docker ps | grep -q tasklist-postgres; then
           echo "Starting Postgres container..."
-          
-          # Remove old container if exists
           docker rm -f tasklist-postgres 2>/dev/null || true
-          
-          # Start new postgres container
           docker run -d \
             --name tasklist-postgres \
             -p 5432:5432 \
@@ -192,9 +187,8 @@ jobs:
             -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
             -v postgres-data:/var/lib/postgresql/data \
             postgres:15
-          
-          echo "Waiting for Postgres to be ready..."
           sleep 10
+          echo "Postgres started successfully"
         else
           echo "Postgres container is already running"
         fi
