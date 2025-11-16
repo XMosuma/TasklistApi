@@ -1,0 +1,75 @@
+---
+- name: Ensure Docker is installed
+  apt:
+    name: docker.io
+    state: present
+  become: yes
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+    enabled: true
+  become: yes
+
+- name: Ensure Postgres container is running
+  shell: |
+    if ! docker ps | grep -q {{ postgres_container_name }}; then
+      echo "Starting Postgres container..."
+      docker rm -f {{ postgres_container_name }} 2>/dev/null || true
+      docker run -d \
+        --name {{ postgres_container_name }} \
+        -p 5432:5432 \
+        -e POSTGRES_DB={{ db_name }} \
+        -e POSTGRES_USER={{ db_user }} \
+        -e POSTGRES_PASSWORD={{ lookup('env', 'POSTGRES_PASSWORD') }} \
+        -v postgres-data:/var/lib/postgresql/data \
+        postgres:15
+      sleep 10
+    else
+      echo "Postgres container is already running"
+    fi
+  args:
+    executable: /bin/bash
+
+- name: Pull latest TaskList image
+  command: docker pull {{ docker_image }}
+
+- name: Stop and remove old TaskList API container
+  shell: |
+    docker stop {{ app_container_name }} || true
+    docker rm {{ app_container_name }} || true
+  args:
+    executable: /bin/bash
+
+- name: Run TaskList API container
+  shell: |
+    docker run -d \
+      --name {{ app_container_name }} \
+      -p {{ app_port }}:{{ internal_port }} \
+      -e SPRING_DATASOURCE_URL="jdbc:postgresql://host.docker.internal:5432/{{ db_name }}" \
+      -e SPRING_DATASOURCE_USERNAME="{{ db_user }}" \
+      -e SPRING_DATASOURCE_PASSWORD="{{ lookup('env', 'POSTGRES_PASSWORD') }}" \
+      -e JWT_SECRET="{{ lookup('env', 'JWT_SECRET') }}" \
+      --add-host=host.docker.internal:host-gateway \
+      {{ docker_image }}
+  args:
+    executable: /bin/bash
+
+- name: Wait for application to start
+  pause:
+    seconds: 15
+
+- name: Check if application is running
+  shell: curl -f http://localhost:{{ app_port }}/actuator/health
+  register: health_check
+  ignore_errors: yes
+
+- name: Show application health
+  debug:
+    msg: >
+      {% if health_check.rc == 0 %}
+        ✅ Application is healthy and running on port {{ app_port }}
+      {% else %}
+        ⚠️ Application health check failed
+      {% endif %}

@@ -1,0 +1,14 @@
+---
+- name: Deploy TaskList API to WSL2
+  hosts: webserver
+  become: yes
+  vars:
+    docker_image: "ghcr.io/xolani/tasklistapi:latest"
+    app_container_name: "tasklist-api"
+    postgres_container_name: "tasklist-postgres"
+    app_port: 8084
+    internal_port: 8081
+    db_user: "postgres"
+    db_name: "tasklist_db"
+  roles:
+    - deploy

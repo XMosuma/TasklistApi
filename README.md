@@ -520,3 +520,66 @@ java -jar -Dspring.profiles.active=wsl target/TasklistApi-0.0.1-SNAPSHOT.jar
 # k8s
 Run once to create the namespace:
 `kubectl apply -f k8s/namespace.yaml`
+
+
+
+# Step-by-Step Setup
+1️⃣ Start SSH server inside WSL
+`sudo apt update`
+`sudo apt install openssh-server -y`
+`sudo service ssh start`
+# To make SSH start automatically each time WSL starts, run:
+sudo bash -c 'cat <<EOF > /etc/wsl.conf
+[boot]
+command="service ssh start"
+EOF'
+
+2️⃣ Create a PowerShell script
+
+# On Windows, open Notepad and paste this:
+
+# File: setup-wsl-ssh.ps1
+# Purpose: Forward Windows port 2222 to WSL SSH port 22
+
+# Remove any old rule
+netsh interface portproxy delete v4tov4 listenport=2222 listenaddress=0.0.0.0
+
+# Add a new rule (connect to localhost:22 inside WSL)
+netsh interface portproxy add v4tov4 listenport=2222 listenaddress=0.0.0.0 connectaddress=127.0.0.1 connectport=22
+
+# Allow inbound firewall rule for port 2222
+if (-not (Get-NetFirewallRule -DisplayName "WSL SSH Port 2222" -ErrorAction SilentlyContinue)) {
+    New-NetFirewallRule -DisplayName "WSL SSH Port 2222" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 2222
+}
+
+Write-Host "✅ WSL SSH forwarding is active on localhost:2222"
+
+Save it to: C:\Users\<your_username>\setup-wsl-ssh.ps1
+
+3️⃣ Run it once manually (as Administrator)
+# Open PowerShell as Administrator, then run:
+`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
+# Then run your script:
+`C:\Users\<your_username>\setup-wsl-ssh.ps1`
+
+# You should see:
+✅ WSL SSH forwarding is active on localhost:2222
+
+# Now test: run this on powershell
+`ssh xolani@localhost -p 2222`
+
+# Continue using Docker Desktop Argo CD
+`kubectl config use-context docker-desktop`
+`kubectl get pods -n argocd`
+`kubectl port-forward svc/argocd-server -n argocd 8083:443`
+`https://localhost:8083`
+
+# Continue using Minikube’s Argo CD
+`kubectl config use-context minikube`
+`kubectl get pods -n argocd`
+`kubectl port-forward svc/argocd-server -n argocd 8083:443`
+`https://localhost:8083`
+
+
+# to generate the password
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo

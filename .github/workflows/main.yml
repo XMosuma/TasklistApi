@@ -139,101 +139,6 @@ jobs:
         cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}:buildcache
         cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}:buildcache,mode=max
 
-
-  deploy-wsl2:
-    name: Deploy to Local WSL2 VM
-    needs: docker-build-push
-    runs-on: self-hosted
-    if: github.ref == 'refs/heads/main'
-
-    # ✅ Inject GitHub Secrets as Environment Variables
-    env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set lowercase repository name
-      id: repo
-      run: |
-        REPO_NAME="${{ github.repository }}"
-        echo "repo_lower=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-    - name: Get Docker bridge IP
-      id: docker_ip
-      run: |
-        DOCKER_HOST_IP=$(ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-        echo "docker_host_ip=$DOCKER_HOST_IP" >> $GITHUB_ENV
-        echo "Docker host IP: $DOCKER_HOST_IP"
-
-    - name: Start Docker service
-      run: |
-        sudo service docker start 2>/dev/null || true
-        docker --version
-
-    - name: Ensure Postgres is running
-      run: |
-        if ! docker ps | grep -q tasklist-postgres; then
-          echo "Starting Postgres container..."
-          docker rm -f tasklist-postgres 2>/dev/null || true
-          docker run -d \
-            --name tasklist-postgres \
-            -p 5432:5432 \
-            -e POSTGRES_DB=tasklist_db \
-            -e POSTGRES_USER=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
-            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            -v postgres-data:/var/lib/postgresql/data \
-            postgres:15
-          sleep 10
-          echo "Postgres started successfully"
-        else
-          echo "Postgres container is already running"
-        fi
-
-    - name: Pull latest Docker image
-      run: |
-        echo "Pulling latest image..."
-        docker pull ghcr.io/${{ env.repo_lower }}:latest
-
-    - name: Restart TaskList API container
-      run: |
-        echo "Restarting container..."
-        docker stop tasklist-api || true
-        docker rm tasklist-api || true
-        
-        docker run -d \
-          --name tasklist-api \
-          -p 8084:8081 \
-          -e SPRING_DATASOURCE_URL="jdbc:postgresql://${{ env.docker_host_ip }}:5432/tasklist_db" \
-          -e SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME}" \
-          -e SPRING_DATASOURCE_PASSWORD="${POSTGRES_PASSWORD}" \
-          -e JWT_SECRET="${JWT_SECRET}" \
-          --add-host=host.docker.internal:host-gateway \
-          ghcr.io/${{ env.repo_lower }}:latest
-
-    - name: Verify deployment
-      run: |
-        echo "Waiting for application to start..."
-        sleep 15
-        
-        if docker ps | grep -q tasklist-api; then
-          echo "✅ Container is running"
-          if curl -f http://localhost:8084/actuator/health > /dev/null 2>&1; then
-            echo "✅ Application health check passed"
-          else
-            echo "⚠️  Application health check failed"
-            docker logs tasklist-api --tail 50
-          fi
-        else
-          echo "❌ Container failed to start"
-          docker logs tasklist-api --tail 50
-          exit 1
-        fi
-
-
   update-k8s-manifests:
     name: Update Kubernetes Manifests for ArgoCD
     needs: docker-build-push
@@ -265,3 +170,33 @@ jobs:
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add k8s/deployment.yaml
         git diff --quiet && git diff --staged --quiet || (git commit -m "Update image to ${{ github.sha }}" && git push)
+
+
+  deploy-ansible:
+    name: Deploy via Ansible
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt update -y
+          sudo apt install -y ansible sshpass
+
+      - name: Set up SSH access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.WSL_SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_rsa_wsl
+          chmod 600 ~/.ssh/id_rsa_wsl
+          ssh-keyscan -H ${{ secrets.WSL_HOST_IP }} >> ~/.ssh/known_hosts
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook ansible/playbook.yml -i ansible/inventory.ini
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
