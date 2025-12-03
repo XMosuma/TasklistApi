@@ -7,7 +7,7 @@ spec:
   project: default
   
   source:
-    repoURL: https://github.com/xolani-mosuma/tasklistapi.git
+    repoURL: https://github.com/XMosuma/TasklistApi
     targetRevision: main
     path: k8s
   
