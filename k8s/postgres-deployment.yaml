@@ -1,92 +1,92 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pvc
-  namespace: tasklist
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: postgres-config
-  namespace: tasklist
-data:
-  POSTGRES_DB: tasklist_db
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: postgres-db
-  namespace: tasklist
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: postgres-db
-  template:
-    metadata:
-      labels:
-        app: postgres-db
-    spec:
-      containers:
-      - name: postgres
-        image: postgres:15
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_DB
-          valueFrom:
-            configMapKeyRef:
-              name: postgres-config
-              key: POSTGRES_DB
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: tasklist-secrets
-              key: datasource-username
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: tasklist-secrets
-              key: datasource-password
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
-        livenessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -U
-            - postgres
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -U
-            - postgres
-          initialDelaySeconds: 5
-          periodSeconds: 5
-      volumes:
-      - name: postgres-storage
-        persistentVolumeClaim:
-          claimName: postgres-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-db
-  namespace: tasklist
-spec:
-  selector:
-    app: postgres-db
-  ports:
-  - port: 5432
-    targetPort: 5432
-  type: ClusterIP
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: postgres-pvc
+#   namespace: tasklist
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 5Gi
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: postgres-config
+#   namespace: tasklist
+# data:
+#   POSTGRES_DB: tasklist_db
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: postgres-db
+#   namespace: tasklist
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: postgres-db
+#   template:
+#     metadata:
+#       labels:
+#         app: postgres-db
+#     spec:
+#       containers:
+#       - name: postgres
+#         image: postgres:15
+#         ports:
+#         - containerPort: 5432
+#         env:
+#         - name: POSTGRES_DB
+#           valueFrom:
+#             configMapKeyRef:
+#               name: postgres-config
+#               key: POSTGRES_DB
+#         - name: POSTGRES_USER
+#           valueFrom:
+#             secretKeyRef:
+#               name: tasklist-secrets
+#               key: datasource-username
+#         - name: POSTGRES_PASSWORD
+#           valueFrom:
+#             secretKeyRef:
+#               name: tasklist-secrets
+#               key: datasource-password
+#         volumeMounts:
+#         - name: postgres-storage
+#           mountPath: /var/lib/postgresql/data
+#         livenessProbe:
+#           exec:
+#             command:
+#             - pg_isready
+#             - -U
+#             - postgres
+#           initialDelaySeconds: 30
+#           periodSeconds: 10
+#         readinessProbe:
+#           exec:
+#             command:
+#             - pg_isready
+#             - -U
+#             - postgres
+#           initialDelaySeconds: 5
+#           periodSeconds: 5
+#       volumes:
+#       - name: postgres-storage
+#         persistentVolumeClaim:
+#           claimName: postgres-pvc
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: postgres-db
+#   namespace: tasklist
+# spec:
+#   selector:
+#     app: postgres-db
+#   ports:
+#   - port: 5432
+#     targetPort: 5432
+#   type: ClusterIP
