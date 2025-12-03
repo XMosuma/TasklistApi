@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: tasklist-api
-        image: ghcr.io/xmosuma/tasklistapi:960c72a8c95c80d51e9097df236e935c38b4bc63
+         image: ghcr.io/xmosuma/tasklistapi:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8081
