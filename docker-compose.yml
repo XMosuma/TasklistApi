@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: tasklist_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -22,17 +22,17 @@ services:
   api:
     build: .
     container_name: tasklist-api
-    env_file:
-      - .env
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tasklist_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: mypassword
+      SPRING_DATASOURCE_PASSWORD: password
       JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       SERVER_PORT: ${SERVER_PORT:-8081}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
     ports:
       - "${SERVER_PORT:-8081}:${SERVER_PORT:-8081}"
     networks:
