@@ -1,0 +1,12 @@
+# External service pointing to Docker Postgres on host
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+  namespace: tasklistapi
+spec:
+  type: ExternalName
+  externalName: host.docker.internal  # For Docker Desktop
+  ports:
+  - port: 5432
+    targetPort: 5432

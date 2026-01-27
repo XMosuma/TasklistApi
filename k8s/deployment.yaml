@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasklist-api
+  namespace: tasklistapi
+  labels:
+    app: tasklist-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tasklist-api
+  template:
+    metadata:
+      labels:
+        app: tasklist-api
+    spec:
+      containers:
+      - name: tasklist-api
+        image: ghcr.io/xmosuma/tasklistapi:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+        
+        # Application environment variables
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: datasource-url
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: datasource-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: datasource-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: jwt-secret
+        
+        # AppDynamics configuration from ConfigMap
+        - name: APPDYNAMICS_CONTROLLER_HOST_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_CONTROLLER_HOST_NAME
+        - name: APPDYNAMICS_CONTROLLER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_CONTROLLER_PORT
+        - name: APPDYNAMICS_CONTROLLER_SSL_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_CONTROLLER_SSL_ENABLED
+        - name: APPDYNAMICS_AGENT_APPLICATION_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_AGENT_APPLICATION_NAME
+        - name: APPDYNAMICS_AGENT_TIER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_AGENT_TIER_NAME
+        - name: APPDYNAMICS_AGENT_ACCOUNT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_AGENT_ACCOUNT_NAME
+        - name: APPDYNAMICS_JAVA_AGENT_REUSE_NODE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_JAVA_AGENT_REUSE_NODE_NAME
+        - name: APPDYNAMICS_JAVA_AGENT_REUSE_NODE_NAME_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: appd-config
+              key: APPDYNAMICS_JAVA_AGENT_REUSE_NODE_NAME_PREFIX
+        
+        # AppDynamics node name - unique per pod
+        - name: APPDYNAMICS_AGENT_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        
+        # AppDynamics Access Key from Secret
+        - name: APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tasklist-secrets
+              key: appd-access-key
+        
+        # 🆕 ADDED: Startup Probe for slow-starting applications
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # Allow up to 5 minutes (30 × 10 seconds)
+        
+        # ✅ UPDATED: Increased delays significantly
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8081
+          initialDelaySeconds: 120  # 2 minutes - matches observed startup time
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8081
+          initialDelaySeconds: 180  # 3 minutes - give app time to stabilize
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+          
+      imagePullSecrets:
+      - name: ghcr-secret

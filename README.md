@@ -420,8 +420,14 @@ mvn spring-boot:run
 
 # Option 2: Using Docker Compose
 # Start everything
-docker-compose up -d
+docker-compose up -d --build 
 docker start postgres-tasklist
+
+# bring the container up
+docker-compose up -d
+
+# stop the container
+docker-compose down
 
 
 # View logs
@@ -513,3 +519,149 @@ java -jar -Dspring.profiles.active=wsl target/TasklistApi-0.0.1-SNAPSHOT.jar
 
 `API: http://localhost:8082/api/tasks`
 `Swagger: http://localhost:8082/swagger-ui.html`
+
+
+
+
+# k8s
+Run once to create the namespace:
+`kubectl apply -f k8s/namespace.yaml`
+
+# 1. Namespace FIRST (everything else needs it)
+kubectl apply -f k8s/namespace.yaml
+
+# 2. Secrets SECOND (deployment references them)
+kubectl apply -f k8s/secret.yaml
+
+# 3. ConfigMaps THIRD (deployment references them)
+kubectl apply -f k8s/appd-configmap.yaml
+
+# 4. PostgreSQL (if using in-cluster DB)
+kubectl apply -f k8s/postgres-deployment.yaml
+kubectl apply -f k8s/postgres-external-service.yaml
+
+# 5. Application Deployment
+kubectl apply -f k8s/deployment.yaml
+
+# 6. Service
+kubectl apply -f k8s/service.yaml
+
+# 7. Ingress LAST
+kubectl apply -f k8s/ingress.yaml
+
+# Step-by-Step Setup
+1️⃣ Start SSH server inside WSL
+`sudo apt update`
+`sudo apt install openssh-server -y`
+`sudo service ssh start`
+# To make SSH start automatically each time WSL starts, run:
+sudo bash -c 'cat <<EOF > /etc/wsl.conf
+[boot]
+command="service ssh start"
+EOF'
+
+2️⃣ Create a PowerShell script
+
+# On Windows, open Notepad and paste this:
+
+# File: setup-wsl-ssh.ps1
+# Purpose: Forward Windows port 2222 to WSL SSH port 22
+
+# Remove any old rule
+netsh interface portproxy delete v4tov4 listenport=2222 listenaddress=0.0.0.0
+
+# Add a new rule (connect to localhost:22 inside WSL)
+netsh interface portproxy add v4tov4 listenport=2222 listenaddress=0.0.0.0 connectaddress=127.0.0.1 connectport=22
+
+# Allow inbound firewall rule for port 2222
+if (-not (Get-NetFirewallRule -DisplayName "WSL SSH Port 2222" -ErrorAction SilentlyContinue)) {
+    New-NetFirewallRule -DisplayName "WSL SSH Port 2222" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 2222
+}
+
+Write-Host "✅ WSL SSH forwarding is active on localhost:2222"
+
+Save it to: C:\Users\<your_username>\setup-wsl-ssh.ps1
+
+3️⃣ Run it once manually (as Administrator)
+# Open PowerShell as Administrator, then run:
+`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
+# Then run your script:
+`C:\Users\<your_username>\setup-wsl-ssh.ps1`
+
+# You should see:
+✅ WSL SSH forwarding is active on localhost:2222
+
+# Now test: run this on powershell
+`ssh xolani@localhost -p 2222`
+
+# Continue using Docker Desktop Argo CD
+`kubectl config use-context docker-desktop`
+`kubectl get pods -n argocd`
+`kubectl port-forward svc/argocd-server -n argocd 8083:443`
+`https://localhost:8083`
+
+# Continue using Minikube’s Argo CD
+`kubectl config use-context minikube`
+`kubectl get pods -n argocd`
+`kubectl port-forward svc/argocd-server -n argocd 8083:443`
+`https://localhost:8083`
+
+
+# to generate the password
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
+
+Add the AppDynamics agent as a JVM argument when starting your application:
+java -javaagent:/path/to/appd-agent/javaagent.jar \
+     -Dappdynamics.agent.applicationName=TasklistApi \
+     -Dappdynamics.agent.tierName=YourTierName \
+     -Dappdynamics.agent.nodeName=YourNodeName \
+     -Dappdynamics.controller.hostName=your-controller.saas.appdynamics.com \
+     -Dappdynamics.controller.port=443 \
+     -Dappdynamics.controller.ssl.enabled=true \
+     -Dappdynamics.agent.accountName=YourAccountName \
+     -Dappdynamics.agent.accountAccessKey=YourAccessKey \
+     -jar your-spring-boot-app.jar
+
+
+# Run Your Spring Boot Application with AppDynamics
+Standard Java Command:
+bashjava -javaagent:/opt/appdynamics/javaagent.jar \
+     -jar your-spring-boot-app.jar
+
+# With Spring Boot Maven Plugin:
+mvn spring-boot:run -Dspring-boot.run.jvmArguments="-javaagent:/opt/appdynamics/javaagent.jar"
+
+# APPD
+# Deployment Steps
+Step 1: Update your secrets (do this manually or via sealed-secrets):
+`kubectl apply -f k8s/secret.yaml`
+Step 2: Apply the AppD ConfigMap:
+`kubectl apply -f k8s/appd-configmap.yaml`
+Step 3: Rebuild and push your Docker image with AppD agent:
+# Build with Maven
+`./mvnw clean package -DskipTests`
+# Build Docker image
+`docker build -t ghcr.io/xmosuma/tasklistapi:latest .`
+# Push to registry
+# Retag the image with your correct username (lowercase as required by ghcr.io)
+docker tag ghcr.io/xolani-mosuma/tasklistapi:latest ghcr.io/xmosuma/tasklistapi:latest
+# Login with correct username
+docker logout ghcr.io
+docker login ghcr.io -u XMosuma
+# Enter your token when prompted
+# Push with correct username
+`docker push ghcr.io/xmosuma/tasklistapi:latest`
+Step 4: Update deployment:
+`kubectl apply -f k8s/deployment.yaml`
+Step 5: Verify AppD agent is running:
+`kubectl logs -n tasklist -l app=tasklist-api --tail=100`
+
+
+
+kubectl create secret generic tasklist-secrets \
+  --namespace=tasklistapi \
+  --from-literal=datasource-url="jdbc:postgresql://localhost:5432/tasklist" \
+  --from-literal=datasource-username="postgres" \
+  --from-literal=datasource-password="password" \
+  --from-literal=jwt-secret="myVerySecretKeyForJWTTokenGenerationAndValidationPleaseChangeThisInProduction123456789" \
+  --from-literal=appd-access-key="ek5dpoyt06t5"
